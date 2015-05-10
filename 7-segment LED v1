@@ -1,0 +1,167 @@
+/*
+//
+////This is a simple sketch to drive a 7 Segment lcd ( http://www.radioshack.com/product/index.jsp?productId=2062557 )
+////It includes the function 'numBer(n)' where n is the number to show on the lcd.
+////It also includes functions countUP(speed), and countDOWN(speed), where speed is the time in ms to delay between each number.
+////There is also a function 'blinkDotPin(n)' where n is the number of times to blink the dot.
+//
+// adapted from the following article> http://www.hacktronics.com/Tutorials/arduino-and-7-segment-led.html
+*/
+const int nodeA = 2;
+const int nodeB = 3;
+const int nodeC = 4;
+const int nodeD = 5;
+const int nodeE = 6;
+const int nodeF = 7;
+const int nodeG = 8;
+const int dotPin = 9;
+void setup() {              
+  pinMode(nodeA, OUTPUT);  
+  pinMode(nodeB, OUTPUT);
+  pinMode(nodeC, OUTPUT);
+  pinMode(nodeD, OUTPUT);
+  pinMode(nodeE, OUTPUT);
+  pinMode(nodeF, OUTPUT);
+  pinMode(nodeG, OUTPUT);
+  pinMode(dotPin, OUTPUT);
+ 
+  digitalWrite(dotPin, 1);  
+}
+void loop() {
+  countUP(1000);
+  blinkDotPin(2);
+ countDOWN(100);
+ blinkDotPin(4);
+ 
+ //                  
+}
+void countUP(int d) {
+  for (int n=0; n<=9; n++) {
+ numBer(n);
+delay(d);
+}
+}
+void countDOWN (int d) {
+ for (int n=9; n>=0; n--) {
+ numBer(n);
+delay(d);
+ }
+}
+ 
+ 
+void blinkDotPin(int t) {
+  for (int i=0; i<=t; i++) {
+    digitalWrite(dotPin, LOW);
+    delay(80);
+    digitalWrite(dotPin, HIGH);
+    delay(80);
+  }
+}
+void numBer (int i) {
+ 
+  if (i == 9) {
+     // write '9'
+ digitalWrite(nodeA, 1);
+ digitalWrite(nodeB, 1);
+ digitalWrite(nodeC, 1);
+ digitalWrite(nodeD, 0);
+ digitalWrite(nodeE, 0);
+ digitalWrite(nodeF, 1);
+ digitalWrite(nodeG, 1);
+  }
+ 
+  else if (i==8) {
+    digitalWrite(nodeA, 1);
+ digitalWrite(nodeB, 1);
+ digitalWrite(nodeC, 1);
+ digitalWrite(nodeD, 1);
+ digitalWrite(nodeE, 1);
+ digitalWrite(nodeF, 1);
+ digitalWrite(nodeG, 1);
+  }
+  else if (i==7) {
+    digitalWrite(nodeA, 1);
+ digitalWrite(nodeB, 1);
+ digitalWrite(nodeC, 1);
+ digitalWrite(nodeD, 0);
+ digitalWrite(nodeE, 0);
+ digitalWrite(nodeF, 0);
+ digitalWrite(nodeG, 0);
+  }
+ 
+  else if (i==6) {
+    // write '6'
+ digitalWrite(nodeA, 1);
+ digitalWrite(nodeB, 0);
+ digitalWrite(nodeC, 1);
+ digitalWrite(nodeD, 1);
+ digitalWrite(nodeE, 1);
+ digitalWrite(nodeF, 1);
+ digitalWrite(nodeG, 1);
+  }
+ 
+  else if (i==5) {
+     // write '5'
+ digitalWrite(nodeA, 1);
+ digitalWrite(nodeB, 0);
+ digitalWrite(nodeC, 1);
+ digitalWrite(nodeD, 1);
+ digitalWrite(nodeE, 0);
+ digitalWrite(nodeF, 1);
+ digitalWrite(nodeG, 1);
+  }
+ 
+  else if (i==4) {
+     // write '4'
+ digitalWrite(nodeA, 0);
+ digitalWrite(nodeB, 1);
+ digitalWrite(nodeC, 1);
+ digitalWrite(nodeD, 0);
+ digitalWrite(nodeE, 0);
+ digitalWrite(nodeF, 1);
+ digitalWrite(nodeG, 1);
+  }
+ 
+  else if (i==3) {
+     // write '3'
+ digitalWrite(nodeA, 1);
+ digitalWrite(nodeB, 1);
+ digitalWrite(nodeC, 1);
+ digitalWrite(nodeD, 1);
+ digitalWrite(nodeE, 0);
+ digitalWrite(nodeF, 1);
+ digitalWrite(nodeG, 0);
+  }
+ 
+  else if (i==2) {
+    // write '2'
+ digitalWrite(nodeA, 1);
+ digitalWrite(nodeB, 1);
+ digitalWrite(nodeC, 0);
+ digitalWrite(nodeD, 1);
+ digitalWrite(nodeE, 1);
+ digitalWrite(nodeF, 1);
+ digitalWrite(nodeG, 0);
+  }
+  else if (i==1) {
+     // write '1'
+ digitalWrite(nodeA, 0);
+ digitalWrite(nodeB, 1);
+ digitalWrite(nodeC, 1);
+ digitalWrite(nodeD, 0);
+ digitalWrite(nodeE, 0);
+ digitalWrite(nodeF, 0);
+ digitalWrite(nodeG, 0);
+  }
+ 
+  else if (i==0) {
+ digitalWrite(nodeA, 1);
+ digitalWrite(nodeB, 1);
+ digitalWrite(nodeC, 1);
+ digitalWrite(nodeD, 1);
+ digitalWrite(nodeE, 1);
+ digitalWrite(nodeF, 0);
+ digitalWrite(nodeG, 1);
+  }
+ 
+}
