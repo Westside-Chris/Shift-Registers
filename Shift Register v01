@@ -1,0 +1,95 @@
+
+/*  CKJ 5-9-15
+    This sketch uses the 75HC595 8-bit shift register
+    that came with the Arduino kits.  It allows the 
+    control of up to 8 LEDs with just 3 pins on the
+    Arduino.  This exercise is a warm-up for trying 
+    to run a 7-segment numeric display.
+
+    Code adapted from example at bildr.org
+    "This code will only support up to 4 shift registers.
+    Because of it taking in a binary number, it is limited to 32 characters."
+*/
+
+int SRCLK_Pin = 8;  // pin 11 on the 75HC595 (Serial Clock, or shift pin)
+// When this pin is pulled high, it will shift the register.
+int SER_Pin = 12;     // pin 14 on the 75HC595 (Serial Pin or data pin)
+// Input for the next pin that gets shifted in.
+int RCLK_Pin = 10;    // pin 12 on the 75HC595 (Register Clock or latch pin)
+// Needs to be pulled high to set the output to the new shift register values.
+// This must be pulled high directly after SRCLK has gone LOW again.
+
+
+/* Multiple shift registers can be daisy-chained;
+    they act as a single register, releasing all 
+    their data together, still with the same 3 Arduino
+    pins.
+*/
+   
+// the next two lines used to be:
+// #define number_of_74hc595s 1 
+// #define numOfRegisterPins number_of_74hc595s * 8
+const int registerQty = 1;
+const int pinsQty = registerQty * 8;
+
+// define an array to contain the LED states (on or off)
+boolean registers[pinsQty];
+
+// Subtask 1 of 2 needed: set all register pin values to LOW
+void clearArray(){
+  for(int i = pinsQty - 1; i >=  0; i--){
+     registers[i] = LOW;
+  }
+} 
+
+// Subtask 2 of 2 needed: load and display registers
+// call this only AFTER all values have been set
+void writeRegisters(){
+
+  digitalWrite(RCLK_Pin, LOW);      // tell the 75HC595 to begin reading
+
+  for(int i = pinsQty - 1; i >=  0; i--){
+    digitalWrite(SRCLK_Pin, LOW);   // here comes data for the next LED
+    int val = registers[i];         // load an array value (1 bit of data)
+    digitalWrite(SER_Pin, val);     // send that value to the 75HC595
+    digitalWrite(SRCLK_Pin, HIGH);  // end of data for that LED
+  }
+
+  digitalWrite(RCLK_Pin, HIGH);     // tell the 75HC595 to release all the data
+                                    // (display all LED values or states)
+}
+
+
+void setup(){
+  pinMode(SRCLK_Pin, OUTPUT);        // clock pin
+  pinMode(SER_Pin, OUTPUT);          // data pin
+  pinMode(RCLK_Pin, OUTPUT);         // latch pin
+
+// reset all register pins (all LEDs off)
+  clearArray();
+  writeRegisters();
+}               
+
+
+void loop(){
+
+// set the desired LED states
+// each state not reassigned retains its previous value
+
+  registers[0] = LOW;
+  registers[1] = HIGH;
+  registers[2] = LOW;
+  registers[3] = LOW;
+  registers[4] = HIGH;
+  registers[5] = LOW;
+  registers[6] = LOW;
+  registers[7] = HIGH;
+  
+  writeRegisters();        // display all the states!
+  delay(500);
+  
+  clearArray();
+  writeRegisters();
+  delay(500);
+  }
+
