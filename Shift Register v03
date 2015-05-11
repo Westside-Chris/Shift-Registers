@@ -1,0 +1,114 @@
+
+/*  CKJ 5-9-15
+    This sketch uses an 8-bit shift register, part number SN74HC595 from
+    Texas Instruments.  It allows the control of up to 8 LEDs with just 3 pins
+    on the Arduino.  The v2 exercise drives a 7-segment numeric display,
+    part number 276-0075 from Radio Shack.  This v3 shortens the program by
+    representing each displayed numeral with a single string of bits
+    rather than using 7 assignment statements.
+*/
+
+int SRCLK_Pin = 4;  // pin 11 on the 74HC595 (Serial Clock, or shift pin)
+// When this pin is pulled high, it will shift the register.
+int SER_Pin = 8;     // pin 14 on the 74HC595 (Serial Pin or data pin)
+// Input for the next pin that gets shifted in.
+int RCLK_Pin = 6;    // pin 12 on the 74HC595 (Register Clock or latch pin)
+// Needs to be pulled high to set the output to the new shift register values.
+// This must be pulled high directly after SRCLK has gone LOW again.  (true?)
+
+
+/* Multiple shift registers can be daisy-chained; they act as a single
+   register, releasing all their data together, still with the same 3
+   Arduino pins.
+*/
+   
+// the next two lines used to be:
+// #define number_of_74HC595s 1 
+// #define numOfRegisterPins number_of_74HC595s * 8
+const int registerQty = 1;
+const int pinsQty = registerQty * 8;
+
+// Declare an array to contain the LED states (on or off).
+// An array is a group of indexed values, starting with
+// [0] for segment A through [6] for segment G.
+boolean registers[pinsQty];
+
+// Declare a font table or array for the 7-segment display.
+// Read each string from the right; starts with segment A (top),
+// continues clockwise with G being the center segment.
+const static byte numTable[128] = 
+{
+  // 0         1         2         3         4
+  B00111111,B00000110,B01011011,B01001111,B01100110,
+  // 5         6         7         8         9
+  B01101101,B01111101,B00100111,B01111111,B01101111
+};
+
+
+// Function 1 of 2 needed: set all register pin values to LOW
+void clearArray() {
+  for (int i = pinsQty - 1; i >=  0; i--) {
+     registers[i] = LOW;
+  }
+} 
+
+// Function 2 of 2 needed: load and display registers
+// call this only AFTER all values have been set
+void writeRegisters() {
+
+  digitalWrite(RCLK_Pin, LOW);      // tell the 74HC595 to begin reading
+
+  for (int i = pinsQty - 1; i >=  0; i--) {
+    digitalWrite(SRCLK_Pin, LOW);   // here comes data for the next LED
+    int val = registers[i];         // load an array value (1 bit of data)
+    digitalWrite(SER_Pin, val);     // send that value to the 74HC595
+    digitalWrite(SRCLK_Pin, HIGH);  // end of data for that LED
+  }
+
+  digitalWrite(RCLK_Pin, HIGH);     // tell the 74HC595 to release all the data
+                                    // (display all LED values or states)
+}
+
+
+void setup() {
+  pinMode(SRCLK_Pin, OUTPUT);        // clock pin
+  pinMode(SER_Pin, OUTPUT);          // data pin
+  pinMode(RCLK_Pin, OUTPUT);         // latch pin
+
+// reset all register pins (all LEDs off)
+  clearArray();
+  writeRegisters();
+}               
+
+void loop() {
+
+  // set the desired LED states, displaying 0 through 9
+  for (int num=0; num <= 9; num++) {
+  assignValues(num);         // populate the designated array
+  writeRegisters();          // display all the states!
+  delay(1000);
+  }
+}
+
+
+// Assign states to the array, for the designated numeral.
+// Uses the special command bitRead, which reads a specific
+// bit from a string.  Note the first bit (bit 0) is the rightmost,
+// so read each numTable string backwards.  Conversely, the
+// registers array starts with [0] as segment A.
+void assignValues (int digit) {
+  for (int i=0; i < 8; i++) {
+    if ( bitRead (numTable[digit],i) )
+       registers[i] = HIGH;
+    else
+       registers[i] = LOW;
+    }
+}
+
+
+// 
+// If this "bitRead" method is too hard to follow, revert to v2 of this sketch.
+// Just wanted to try it, saves many lines of code.
+//
+
+
