@@ -1,0 +1,206 @@
+
+/*  CKJ 5-10-15
+    This sketch uses an 8-bit shift register, part number SN74HC595 from
+    Texas Instruments.  It allows the control of up to 8 LEDs with just 3 pins
+    on the Arduino.
+  
+    This v5 improves the assigment of LED segment data while cycling from 0 to 99.
+    Uses two nested loops rather than branching for each group of tens.
+    
+    This v5 also uses shorter assignments to define each numeral.
+    
+    */
+
+int SRCLK_Pin = 4;  // pin 11 on the 75HC595 (Serial Clock, or shift pin)
+// When this pin is pulled high, it will shift the register.
+int SER_Pin = 8;     // pin 14 on the 75HC595 (Serial Pin or data pin)
+// Input for the next pin that gets shifted in.
+int RCLK_Pin = 6;    // pin 12 on the 75HC595 (Register Clock or latch pin)
+// Needs to be pulled high to set the output to the new shift register values.
+// This must be pulled high directly after SRCLK has gone LOW again.  (true?)
+
+
+/*  Multiple shift registers can be daisy-chained; they act as a single register,
+    releasing all their data together, still with the same 3 Arduino pins.
+    Pin 9 (QH-prime) on the first chip is connected to pin 14 (SER) of the second chip.
+    The shift and latch pins are connected together.
+*/
+   
+// the next two lines used to be:
+// #define number_of_74hc595s 1 
+// #define numOfRegisterPins number_of_74hc595s * 8
+const int registerQty = 2;
+const int pinsQty = registerQty * 8;
+
+// define an array to contain the LED states (on or off)
+boolean registers[pinsQty];
+
+// Function 1 of 2 needed: set all register pin values to 0 or LOW
+void clearArray() {
+  for(int b = pinsQty - 1; b >= 0; b--) {
+     registers[b] = 0;
+  }
+} 
+
+// Function 2 of 2 needed: load and display registers
+// call this only AFTER all values have been set
+void writeRegisters() {
+
+  digitalWrite(RCLK_Pin, LOW);      // tell the 75HC595 to begin reading
+
+  for(int i = pinsQty - 1; i >=  0; i--) {
+    digitalWrite(SRCLK_Pin, LOW);   // here comes data for the next LED
+    int val = registers[i];         // load an array value (1 bit of data)
+    digitalWrite(SER_Pin, val);     // send that value to the 75HC595
+    digitalWrite(SRCLK_Pin, HIGH);  // end of data for that LED
+  }
+
+  digitalWrite(RCLK_Pin, HIGH);     // tell the 75HC595 to release all the data
+                                    // (display all LED values or states)
+}
+
+// Note the segment states are loaded from high to low,
+// from [15] to [0], since each bit is passed or shifted
+// outward, essentially in FIFO order.  The first bit gets
+// passed the furthest, in this case to pin QH of the second
+// chip.
+
+// Another way of looking at it... the 75HC595 chips are not looking
+// at the index numbers of the array named "registers".  Can't see them
+// anyway, the data bit just comes in as unlabeled "val".  But it was helpful
+// to know or decide the array's organization, and to load the bits
+// in the corresponding order.  Would have also worked for [15] to represent
+// the top segment of the first digit, as long as the bits were loaded from
+// low index number to high.
+
+
+void setup() {
+  pinMode(SRCLK_Pin, OUTPUT);        // clock pin
+  pinMode(SER_Pin, OUTPUT);          // data pin
+  pinMode(RCLK_Pin, OUTPUT);         // latch pin
+
+// reset all register pins (all LEDs off)
+  clearArray();
+  writeRegisters();
+  delay(1000);
+}               
+
+
+void loop() {
+
+// Set the desired LED states, displaying 0 through 99.
+
+// This is an improvement from v4 which branched to assign
+// values in groups of 10.  Now uses 2 nested for loops.
+
+// The function assignValues still takes two parameters, the first
+// indicating which numeral is being assigned.  A "0" means the
+// first or ones column, a "1" means the second or tens column.
+// The second parameter is simply the digit to be displayed.
+// As before, the two digits are assigned separately.
+
+// Note that this method is hard-coded for a 2-digit display.
+// Would need a hundreds loop for a 3-digit display.
+
+// It may be that this general method can support only up to 4 shift registers.
+// "Because of it taking in a binary number, it is limited to 32 characters."
+// There may also be power limits, requiring the use of transistors or ICs
+// to add more LEDs.  In any case it would be nice to eliminate the resistor
+// needed for each LED segment; some ICs make this possible.
+
+  for (int tens=0; tens <= 9; tens++) {
+    for (int ones=0; ones <= 9; ones++)  {
+      assignValues(0, ones);       // populate the designated array
+      assignValues(1, tens);
+  
+      writeRegisters();            // display all the states!
+      delay(500);
+      clearArray();
+      writeRegisters();
+      delay(100);
+    }
+  }
+}
+
+
+// digit is 1 for the left display (tens column)
+// digit is 0 for the right display (ones column)
+void assignValues(int digit, int num) {
+int a = digit * 8;          // for ones column, a is still zero.
+                            // for tens column, a becomes 8 which
+                            // adds or bumps up to range 8 to 15.
+
+if (num == 0 && digit == 0) {              // suppress leading zero
+  registers[a+0] = 1;    // segment A (top)
+  registers[a+1] = 1;    // B (next clockwise)
+  registers[a+2] = 1;    // C
+  registers[a+3] = 1;    // D
+  registers[a+4] = 1;    // E
+  registers[a+5] = 1;    // F
+  registers[a+6] = 0;    // G (middle)
+ }
+else if (num == 1) {
+  registers[a+1] = 1;    // B (next clockwise)
+  registers[a+2] = 1;    // C
+ }
+else if (num == 2) {
+  registers[a+0] = 1;    // segment A (top)
+  registers[a+1] = 1;    // B (next clockwise)
+  registers[a+3] = 1;    // D
+  registers[a+4] = 1;    // E
+  registers[a+6] = 1;    // G (middle)
+ }
+else if (num == 3) {
+  registers[a+0] = 1;    // segment A (top)
+  registers[a+1] = 1;    // B (next clockwise)
+  registers[a+2] = 1;    // C
+  registers[a+3] = 1;    // D
+  registers[a+6] = 1;    // G (middle)
+ }
+else if (num == 4) {
+  registers[a+1] = 1;    // B (next clockwise)
+  registers[a+2] = 1;    // C
+  registers[a+5] = 1;    // F
+  registers[a+6] = 1;    // G (middle)
+ }
+else if (num == 5) {
+  registers[a+0] = 1;    // segment A (top)
+  registers[a+2] = 1;    // C
+  registers[a+3] = 1;    // D
+  registers[a+5] = 1;    // F
+  registers[a+6] = 1;    // G (middle)
+ }
+else if (num == 6) {
+  registers[a+0] = 1;    // segment A (top)
+  registers[a+2] = 1;    // C
+  registers[a+3] = 1;    // D
+  registers[a+4] = 1;    // E
+  registers[a+5] = 1;    // F
+  registers[a+6] = 1;    // G (middle)
+ }
+else if (num == 7) {
+  registers[a+0] = 1;    // segment A (top)
+  registers[a+1] = 1;    // B (next clockwise)
+  registers[a+2] = 1;    // C
+ }
+else if (num == 8) {
+  registers[a+0] = 1;    // segment A (top)
+  registers[a+1] = 1;    // B (next clockwise)
+  registers[a+2] = 1;    // C
+  registers[a+3] = 1;    // D
+  registers[a+4] = 1;    // E
+  registers[a+5] = 1;    // F
+  registers[a+6] = 1;    // G (middle)
+ }
+else if (num == 9) {
+  registers[a+0] = 1;    // segment A (top)
+  registers[a+1] = 1;    // B (next clockwise)
+  registers[a+2] = 1;    // C
+  registers[a+3] = 1;    // D
+  registers[a+5] = 1;    // F
+  registers[a+6] = 1;    // G (middle)
+ }
+
+// the fall-through case is the suppressed (blank) leading zero
+
+}
